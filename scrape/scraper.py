@@ -37,16 +37,18 @@ def scrape(url, agenda):
 
     # I used concurrent features of python with 10 parallel tasks
     print('Starting execution: ' + str(datetime.datetime.now()))
+
+    # with keyword eqv try-with-resources (java)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
 
         future_to_scrape = {executor.submit(scrape_child_authors_list, url, item.link): item for item in items}
 
         for future in concurrent.futures.as_completed(future_to_scrape):
-            return_of_future = future_to_scrape[future]
+            future_item = future_to_scrape[future]
             try:
                 data = future.result()
             except Exception as exception:
-                print('%r generated an exception: %s' % (return_of_future, exception))
+                print('%r generated an exception: %s' % (future_item, exception))
             else:
                 all_authors.extend(data)
 
