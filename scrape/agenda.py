@@ -2,7 +2,8 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from scrape.item import Item
 import concurrent.futures
-from collections import Counter
+from collections import defaultdict
+
 
 def scrape(url, agenda):
     page = urlopen(url + agenda)
@@ -29,7 +30,8 @@ def scrape(url, agenda):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
 
-        future_to_scrape = {executor.submit(scrape_child_authors_list, (url + item.link)): item for item in items}
+        future_to_scrape = {executor.submit(scrape_child_authors_list, url, item.link): item for item in items}
+
         for future in concurrent.futures.as_completed(future_to_scrape):
             return_of_future = future_to_scrape[future]
             try:
@@ -39,18 +41,25 @@ def scrape(url, agenda):
             else:
                 all_authors.extend(data)
 
-    authors_grouped = dict(Counter(all_authors))
-    authors_filtered = {k:v for (k,v) in authors_grouped.items() if v > 1}
+    authors_grouped = defaultdict(list)
+    for k, v in all_authors:
+        authors_grouped[k].append(v)
+
+    authors_filtered = {k: v for (k, v) in authors_grouped.items() if len(v) > 1}
     print(authors_filtered)
 
-def scrape_child_authors_list(url):
+
+def scrape_child_authors_list(url, part):
     authors = []
-    page = urlopen(url)
+    page = urlopen(url+part)
+
+    end_part = part.find('--') #/masumlar-apartmani--6648335?a=popular'
+    part = part[1:end_part]
 
     html = page.read().decode("utf-8")
     soup = BeautifulSoup(html, "html.parser")
     ul = soup.find('ul', {'id': 'entry-item-list'})
     for li in ul.find_all('li'):
-        authors.append(li['data-author'])
+        authors.append((li['data-author'], part))
 
     return authors
