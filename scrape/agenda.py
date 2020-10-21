@@ -60,7 +60,10 @@ def scrape(url, agenda):
     # we want to show only 2+ occurrences of authors among pages
     authors_filtered = {k: v for (k, v) in authors_grouped.items() if len(v) > 1}
     print(authors_filtered)
-    insert_records(authors_filtered)
+    try:
+        insert_records(authors_filtered)
+    except:
+        print("Something went wrong :(")
 
 
 def scrape_child_authors_list(url, part):
