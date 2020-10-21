@@ -7,6 +7,10 @@ import concurrent.futures
 from collections import defaultdict
 from dao.repository import insert_records
 
+top_view_count = 20
+parallel_call_count = 10
+author_minimum_occurrence = 2
+
 
 def scrape(url, agenda):
     page = urlopen(url + agenda)
@@ -30,7 +34,7 @@ def scrape(url, agenda):
             items.append(Item(title, int(view), link))
 
     # we need title with top 10 view count
-    items = sorted(items, key=lambda x: x.view, reverse=True)[:10]
+    items = sorted(items, key=lambda x: x.view, reverse=True)[:top_view_count]
 
     # we will scrape deep down every child, so that we need an array to collect them
     all_authors = []
@@ -39,7 +43,7 @@ def scrape(url, agenda):
     print('Starting execution: ' + str(datetime.datetime.now()))
 
     # with keyword eqv try-with-resources (java)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=parallel_call_count) as executor:
 
         future_to_scrape = {executor.submit(scrape_child_authors_list, url, item.link): item for item in items}
 
@@ -59,8 +63,8 @@ def scrape(url, agenda):
     for k, v in all_authors:
         authors_grouped[k].append(v)
 
-    # we want to show only 2+ occurrences of authors among pages
-    authors_filtered = {k: v for (k, v) in authors_grouped.items() if len(v) > 1}
+    # we want to show only n+ occurrences of authors among pages
+    authors_filtered = {k: v for (k, v) in authors_grouped.items() if len(v) >= author_minimum_occurrence}
     print(authors_filtered)
 
     if len(authors_filtered) > 0:
