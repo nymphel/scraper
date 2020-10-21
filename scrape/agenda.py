@@ -60,11 +60,14 @@ def scrape(url, agenda):
     # we want to show only 2+ occurrences of authors among pages
     authors_filtered = {k: v for (k, v) in authors_grouped.items() if len(v) > 1}
     print(authors_filtered)
-    try:
-        insert_records(authors_filtered)
-    except:
-        print("Something went wrong :(")
 
+    if len(authors_filtered) > 0:
+        try:
+            insert_records(authors_filtered)
+        except:
+            print("Something went wrong :(")
+    else:
+        print('No operation will be done')
 
 def scrape_child_authors_list(url, part):
     print('Execution of child with ' + part + ' and thread id: ' + str(threading.get_ident()) + " - " + str(
